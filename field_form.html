@@ -794,6 +794,16 @@
         </div>
 
         <div class="field">
+            <label for="site">Site / Plot</label>
+            <input type="text" id="site" placeholder="e.g. Cocha Cashu Trail A" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+
+        <div class="field">
+            <label for="observer">Observer</label>
+            <input type="text" id="observer" placeholder="e.g. Celil Acar" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+
+        <div class="field">
             <label for="notes">Notes</label>
             <textarea id="notes" placeholder="Appearance, coordinates, behaviour…"></textarea>
         </div>
@@ -1229,6 +1239,8 @@
         document.getElementById('category').value = '';
         document.getElementById('species').value  = '';
         document.getElementById('notes').value    = '';
+        document.getElementById('site').value     = '';
+        document.getElementById('observer').value = '';
         collected = null; confidence = null; habitat = null; weather = null; substrate = null;
         abundance = null; lifeStage = null; canopyCover = null; reproStatus = null; preservMethod = null;
         editingId = null;
@@ -1267,6 +1279,8 @@
             timestamp:     fmtISO(new Date()),
             category:      cat,
             species:       document.getElementById('species').value.trim(),
+            site:          document.getElementById('site').value.trim(),
+            observer:      document.getElementById('observer').value.trim(),
             notes:         document.getElementById('notes').value.trim(),
             abundance:     abundance     || '',
             lifeStage:     lifeStage     || '',
@@ -1293,6 +1307,8 @@
             if (obs[i].id === editingId) {
                 obs[i].category      = cat;
                 obs[i].species       = document.getElementById('species').value.trim();
+                obs[i].site          = document.getElementById('site').value.trim();
+                obs[i].observer      = document.getElementById('observer').value.trim();
                 obs[i].notes         = document.getElementById('notes').value.trim();
                 obs[i].abundance     = abundance     || '';
                 obs[i].lifeStage     = lifeStage     || '';
@@ -1321,6 +1337,8 @@
         document.getElementById('category').value = entry.category;
         document.getElementById('species').value  = entry.species  || '';
         document.getElementById('notes').value    = entry.notes    || '';
+        document.getElementById('site').value     = entry.site     || '';
+        document.getElementById('observer').value = entry.observer || '';
 
         collected = entry.collected || null;
         setActive(['coll-yes','coll-no'], collected ? 'coll-'+collected : null);
