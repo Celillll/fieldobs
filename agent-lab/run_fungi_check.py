@@ -6,7 +6,11 @@ CSV_PATH = "data/test_fungi_survey.csv"
 TODAY = date.today()
 REPORT_PATH = f"reports/fungi_check_{TODAY}.md"
 
-REQUIRED_COLUMNS = ["date", "site", "species_name", "substrate", "observer", "notes"]
+REQUIRED_COLUMNS = [
+    "id", "timestamp", "category", "species", "site", "observer", "notes",
+    "abundance", "lifeStage", "canopyCover", "reproStatus", "habitat",
+    "weather", "substrate", "collected", "preservMethod", "confidence",
+]
 VALID_SITES = {"Cocha Cashu Trail A", "Los Amigos River Bank", "Pantano Plot 3"}
 VALID_OBSERVERS = {"Celil Acar", "Maria Lopez"}
 
@@ -28,12 +32,12 @@ total_rows = len(rows)
 unique_sites = sorted({r["site"] for r in rows})
 unique_observers = sorted({r["observer"] for r in rows})
 
-empty_species = [(i+1, r) for i, r in enumerate(rows) if not r["species_name"].strip()]
+empty_species = [(i+1, r) for i, r in enumerate(rows) if not r["species"].strip()]
 
 future_dates = []
 for i, r in enumerate(rows):
     try:
-        row_date = date.fromisoformat(r["date"].strip())
+        row_date = date.fromisoformat(r["timestamp"].strip().split("T")[0])
         if row_date > TODAY:
             future_dates.append((i+1, r))
     except ValueError:
@@ -66,7 +70,7 @@ def bad_species_format(name):
 
 species_format_issues = []
 for i, r in enumerate(rows):
-    name = r["species_name"].strip()
+    name = r["species"].strip()
     if not name:
         continue
     issue = bad_species_format(name)
@@ -91,7 +95,7 @@ w("---")
 w()
 w("## 1. Column Check")
 w()
-w("All required columns present: `date`, `site`, `species_name`, `substrate`, `observer`, `notes` ✓")
+w("All required columns present. ✓")
 w()
 w("---")
 w()
@@ -108,7 +112,7 @@ w()
 w("## 3. Unique Sites Found")
 w()
 for s in unique_sites:
-    tag = " *(invalid — see Section 10)*" if s not in VALID_SITES else ""
+    tag = " *(invalid - see Section 10)*" if s not in VALID_SITES else ""
     w(f"- {s}{tag}")
 w()
 w("---")
@@ -116,18 +120,18 @@ w()
 w("## 4. Unique Observers Found")
 w()
 for o in unique_observers:
-    tag = " *(invalid — see Section 11)*" if o not in VALID_OBSERVERS else ""
+    tag = " *(invalid - see Section 11)*" if o not in VALID_OBSERVERS else ""
     w(f"- {o}{tag}")
 w()
 w("---")
 w()
-w("## 5. Rows with Empty species_name")
+w("## 5. Rows with Empty species")
 w()
 if empty_species:
-    w("| Row | date | site | observer | notes |")
-    w("|-----|------|------|----------|-------|")
+    w("| Row | timestamp | site | observer | notes |")
+    w("|-----|-----------|------|----------|-------|")
     for n, r in empty_species:
-        w(f"| {n} | {r['date']} | {r['site']} | {r['observer']} | {r['notes']} |")
+        w(f"| {n} | {r['timestamp']} | {r['site']} | {r['observer']} | {r['notes']} |")
 else:
     w("None.")
 w()
@@ -136,10 +140,10 @@ w()
 w("## 6. Rows with Future Date (after today)")
 w()
 if future_dates:
-    w("| Row | date | site | species_name | observer | notes |")
-    w("|-----|------|------|--------------|----------|-------|")
+    w("| Row | timestamp | site | species | observer | notes |")
+    w("|-----|-----------|------|---------|----------|-------|")
     for n, r in future_dates:
-        w(f"| {n} | {r['date']} | {r['site']} | {r['species_name']} | {r['observer']} | {r['notes']} |")
+        w(f"| {n} | {r['timestamp']} | {r['site']} | {r['species']} | {r['observer']} | {r['notes']} |")
 else:
     w("None.")
 w()
@@ -148,10 +152,10 @@ w()
 w("## 7. Rows with Empty or Missing substrate")
 w()
 if empty_substrate:
-    w("| Row | date | site | species_name | observer |")
-    w("|-----|------|------|--------------|----------|")
+    w("| Row | timestamp | site | species | observer |")
+    w("|-----|-----------|------|---------|----------|")
     for n, r in empty_substrate:
-        w(f"| {n} | {r['date']} | {r['site']} | {r['species_name']} | {r['observer']} |")
+        w(f"| {n} | {r['timestamp']} | {r['site']} | {r['species']} | {r['observer']} |")
 else:
     w("None.")
 w()
@@ -178,10 +182,10 @@ w()
 w("Expected format: first word capitalised, second word lowercase (e.g. `Amanita muscaria`).")
 w()
 if species_format_issues:
-    w("| Row | species_name | Issue |")
-    w("|-----|--------------|-------|")
+    w("| Row | species | Issue |")
+    w("|-----|---------|-------|")
     for n, r, issue in species_format_issues:
-        w(f"| {n} | {r['species_name']} | {issue} |")
+        w(f"| {n} | {r['species']} | {issue} |")
 else:
     w("None.")
 w()
@@ -219,7 +223,7 @@ w("## 12. Flags Summary")
 w()
 w("| Check | Issues Found |")
 w("|-------|-------------|")
-w(f"| Missing species_name | {len(empty_species)} row(s) |")
+w(f"| Missing species | {len(empty_species)} row(s) |")
 w(f"| Future date | {len(future_dates)} row(s) |")
 w(f"| Missing substrate | {len(empty_substrate)} row(s) |")
 w(f"| Exact duplicates | {len(duplicates)} pair(s) |")
