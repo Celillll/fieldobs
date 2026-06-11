@@ -5,7 +5,7 @@ Read the file at data/test_fungi_survey.csv and produce a plain-text summary.
 
 ## Steps
 1. Read the CSV file
-2. Check that these columns exist: date, site, species_name, substrate, observer, notes
+2. Check that these columns exist: id, timestamp, category, species, site, observer, notes, abundance, lifeStage, canopyCover, reproStatus, habitat, weather, substrate, collected, preservMethod, confidence
 3. Count the total number of rows (not counting the header)
 4. List the unique site names found
 5. List the unique observer names found
