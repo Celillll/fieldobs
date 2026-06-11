@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Field Observations</title>
+    <meta name="theme-color" content="#2d5016">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FieldObs">
+    <link rel="manifest" id="pwa-manifest">
+    <link rel="apple-touch-icon" id="apple-touch-icon">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2ed;
+            color: #2c2c2c;
+            min-height: 100vh;
+            /* bottom padding accommodates fixed nav + iPhone safe area */
+            padding: 16px 16px calc(68px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .wrap { max-width: 580px; margin: 0 auto; }
+
+        /* ── Pages ──────────────────────────────────────────────── */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ── Bottom navigation ──────────────────────────────────── */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-top: 1.5px solid #e4e4e4;
+            display: flex;
+            z-index: 200;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+        }
+
+        .nav-tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 9px 0 11px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #bbb;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: color 0.14s;
+        }
+
+        .nav-tab.active { color: #2d6a2d; }
+        .nav-tab svg { width: 22px; height: 22px; }
+
+        /* ── Header ─────────────────────────────────────────────── */
+        .header { padding: 8px 0 18px; }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #1a3a1a;
+        }
+        .header-counts {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #2d6a2d;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .live-time {
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        /* ── Card ───────────────────────────────────────────────── */
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        }
+
+        .next-id {
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: #2d6a2d;
+            font-weight: 700;
+            margin-bottom: 18px;
+            letter-spacing: 0.04em;
+        }
+
+        .next-id.editing { color: #a05c00; }
+
+        /* ── Fields ─────────────────────────────────────────────── */
+        .field { margin-bottom: 18px; }
+        .field:last-child { margin-bottom: 0; }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        select, input[type="text"], textarea {
+            width: 100%;
+            padding: 14px 12px;
+            font-size: 1rem;
+            border: 2px solid #e2e2e2;
+            border-radius: 9px;
+            background: #fafafa;
+            color: #2c2c2c;
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+            transition: border-color 0.15s;
+            font-family: inherit;
+        }
+
+        select:focus, input[type="text"]:focus, textarea:focus {
+            border-color: #2d6a2d;
+            background: #fff;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+
+        textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
+
+        /* ── Toggle buttons ─────────────────────────────────────── */
+        .btn-group { display: flex; gap: 8px; }
+
+        .btn-toggle {
+            flex: 1;
+            padding: 14px 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: 2px solid #e2e2e2;
+            border-radius: 9px;
+            background: #fafafa;
+            color: #666;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.14s;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+        }
+
+        .btn-toggle.active {
+            border-color: #2d6a2d;
+            background: #2d6a2d;
+            color: #fff;
+        }
+
+        .btn-toggle:active { transform: scale(0.96); }
+
+        /* ── Chip buttons (habitat) ─────────────────────────────── */
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .btn-chip {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 2px solid #e2e2e2;
+            border-radius: 20px;
+            background: #fafafa;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.14s;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .btn-chip.active {
+            border-color: #2d6a2d;
+            background: #2d6a2d;
+            color: #fff;
+        }
+
+        .btn-chip:active { transform: scale(0.95); }
+
+        /* ── Save / Update / Cancel buttons ─────────────────────── */
+        .btn-save {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            background: #2d6a2d;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.14s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+        }
+
+        .btn-save:active { background: #1f4d1f; transform: scale(0.985); }
+
+        .btn-update {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            background: #a05c00;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.14s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+        }
+
+        .btn-update:active { background: #7a4500; transform: scale(0.985); }
+
+        .btn-cancel {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            background: transparent;
+            color: #999;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.14s;
+        }
+
+        .btn-cancel:active { background: #f0f0f0; color: #666; }
+
+        /* ── Export button ──────────────────────────────────────── */
+        .btn-export {
+            width: 100%;
+            padding: 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: #fff;
+            color: #2d6a2d;
+            border: 2px solid #2d6a2d;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.14s;
+            -webkit-tap-highlight-color: transparent;
+            margin-bottom: 16px;
+            display: none;
+            font-family: inherit;
+        }
+
+        .btn-export:active { background: #2d6a2d; color: #fff; }
+
+        /* ── Section heading ────────────────────────────────────── */
+        .section-head {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .count-pill {
+            background: #2d6a2d;
+            color: #fff;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 1px 8px;
+        }
+
+        /* ── Observation cards ──────────────────────────────────── */
+        .obs-item {
+            background: #fff;
+            border-radius: 11px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border-left: 4px solid #2d6a2d;
+        }
+
+        .cat-PLANTS       { border-left-color: #2d8a2d; }
+        .cat-FUNGI        { border-left-color: #8a4a18; }
+        .cat-LICHEN       { border-left-color: #6a7a2d; }
+        .cat-SLIME_MOLD   { border-left-color: #7a2d6a; }
+        .cat-INVERTEBRATE { border-left-color: #2d5a8a; }
+        .cat-VERTEBRATE   { border-left-color: #8a2d2d; }
+        .cat-HABITAT      { border-left-color: #2d7a7a; }
+        .cat-UNKNOWN      { border-left-color: #999; }
+
+        .obs-row1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .obs-id-tag {
+            font-family: monospace;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #2d6a2d;
+        }
+
+        .obs-row1-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .obs-cat-tag {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #999;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-edit {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border: 1.5px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+            color: #888;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+            transition: all 0.12s;
+        }
+
+        .btn-edit:active { background: #e8e8e8; }
+
+        .btn-delete-obs {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border: 1.5px solid #f5c6c6;
+            border-radius: 5px;
+            background: #fafafa;
+            color: #c0392b;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+            transition: all 0.12s;
+        }
+
+        .btn-delete-obs:active { background: #fde8e8; }
+
+        /* ── Delete confirmation modal ───────────────────────────── */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            padding: 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 26px 22px 20px;
+            max-width: 320px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transform: scale(0.92);
+            transition: transform 0.2s ease;
+        }
+
+        .modal-overlay.open .modal-box { transform: scale(1); }
+
+        .modal-msg {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            line-height: 1.45;
+            margin-bottom: 22px;
+            text-align: center;
+        }
+
+        .modal-msg strong {
+            display: block;
+            font-family: monospace;
+            font-size: 1.05rem;
+            color: #2d6a2d;
+            margin-bottom: 6px;
+        }
+
+        .modal-sub {
+            font-size: 0.82rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        .modal-btns { display: flex; gap: 10px; }
+
+        .modal-btn-cancel {
+            flex: 1;
+            padding: 15px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            background: #f0f0f0;
+            color: #555;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-btn-cancel:active { background: #e0e0e0; }
+
+        .modal-btn-delete {
+            flex: 1;
+            padding: 15px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            background: #c0392b;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-btn-delete:active { background: #96281b; }
+
+        .obs-species {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a3a1a;
+            margin-bottom: 5px;
+        }
+
+        .obs-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .obs-ts {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #bbb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .b-certain   { background: #d4edda; color: #1a5c2a; }
+        .b-probable  { background: #fff3cd; color: #7d5c00; }
+        .b-uncertain { background: #f8d7da; color: #721c24; }
+        .b-collected { background: #d1ecf1; color: #0c5460; }
+        .b-habitat   { background: #eaf4e8; color: #2d6020; }
+        .b-weather   { background: #e8eef8; color: #2d4a8a; }
+        .b-substrate { background: #f4ede4; color: #6b3a1f; }
+        .b-abundance { background: #f0ebf8; color: #5a2d8a; }
+        .b-lifestage { background: #fdf0d8; color: #7a4400; }
+        .b-canopy    { background: #e4f4e0; color: #1a5a10; }
+        .b-repro     { background: #fde8f0; color: #8a0040; }
+        .b-preserv   { background: #e4eef8; color: #003a7a; }
+
+        .obs-notes {
+            font-size: 0.83rem;
+            color: #666;
+            margin-top: 6px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* ── Checklist progress bar ──────────────────────────────── */
+        .cl-header-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .cl-progress {
+            flex: 1;
+            height: 5px;
+            background: #e4e4e4;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .cl-progress-fill {
+            height: 100%;
+            background: #2d6a2d;
+            border-radius: 3px;
+            transition: width 0.35s ease;
+            width: 0%;
+        }
+
+        .cl-stats {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #2d6a2d;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* ── Add item row ────────────────────────────────────────── */
+        .cl-add-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cl-add-row input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .btn-cl-add {
+            padding: 14px 18px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: #2d6a2d;
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.14s;
+            flex-shrink: 0;
+        }
+
+        .btn-cl-add:active { background: #1f4d1f; }
+
+        /* ── Checklist section toolbar ───────────────────────────── */
+        .cl-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .btn-cl-reset {
+            padding: 7px 14px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: transparent;
+            color: #888;
+            border: 1.5px solid #ddd;
+            border-radius: 7px;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.12s;
+            display: none;
+        }
+
+        .btn-cl-reset:active { background: #f0f0f0; }
+
+        /* ── Checklist items ─────────────────────────────────────── */
+        .cl-item {
+            background: #fff;
+            border-radius: 11px;
+            padding: 14px 14px 14px 16px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: opacity 0.15s;
+        }
+
+        .cl-item.cl-done { opacity: 0.6; }
+        .cl-item.cl-done .cl-text {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .cl-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            cursor: pointer;
+            min-width: 0;
+        }
+
+        .cl-check {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            cursor: pointer;
+            accent-color: #2d6a2d;
+        }
+
+        .cl-text {
+            font-size: 0.95rem;
+            color: #2c2c2c;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .cl-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-cl-action {
+            padding: 7px 11px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            border: 1.5px solid #ddd;
+            border-radius: 6px;
+            background: #fafafa;
+            color: #888;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.12s;
+            white-space: nowrap;
+        }
+
+        .btn-cl-action:active { background: #eee; }
+
+        .btn-cl-del {
+            color: #c0392b;
+            border-color: #f5c6c6;
+            font-size: 0.85rem;
+            padding: 7px 10px;
+        }
+
+        .btn-cl-del:active { background: #fde8e8; }
+
+        .btn-cl-save {
+            color: #2d6a2d;
+            border-color: #b8ddb8;
+        }
+
+        .btn-cl-save:active { background: #e8f4e8; }
+
+        /* Edit mode item */
+        .cl-item.cl-editing {
+            background: #fffdf5;
+            border: 1.5px solid #e0d080;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+        }
+
+        .cl-edit-input {
+            flex: 1;
+            padding: 9px 11px;
+            font-size: 0.95rem;
+            border: 2px solid #2d6a2d;
+            border-radius: 8px;
+            background: #fff;
+            color: #2c2c2c;
+            outline: none;
+            font-family: inherit;
+            min-width: 0;
+        }
+
+        /* ── Empty state ─────────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 32px 20px;
+            color: #bbb;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        /* ── Toast ──────────────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+            left: 50%;
+            transform: translateX(-50%) translateY(50px);
+            background: #1a3a1a;
+            color: #fff;
+            padding: 11px 22px;
+            border-radius: 22px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: transform 0.28s ease, opacity 0.28s ease;
+            z-index: 999;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ OBSERVE PAGE ═══════════════════════════════ -->
+<div id="page-observe" class="page active">
+<div class="wrap">
+
+    <div class="header">
+        <h1>Field Observations</h1>
+        <div class="header-counts" id="headerCounts"></div>
+        <div class="live-time" id="liveTime"></div>
+    </div>
+
+    <div class="card">
+        <div class="next-id" id="nextId">Next: OBS_001</div>
+
+        <div class="field">
+            <label for="category">Category</label>
+            <select id="category" onchange="onCategoryChange()">
+                <option value="">— select —</option>
+                <option value="PLANTS">PLANTS</option>
+                <option value="FUNGI">FUNGI</option>
+                <option value="LICHEN">LICHEN</option>
+                <option value="SLIME_MOLD">SLIME_MOLD</option>
+                <option value="INVERTEBRATE">INVERTEBRATE</option>
+                <option value="VERTEBRATE">VERTEBRATE</option>
+                <option value="HABITAT">HABITAT</option>
+                <option value="UNKNOWN">UNKNOWN</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="species">Species / Name</label>
+            <input type="text" id="species" placeholder="e.g. Amanita muscaria" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+
+        <div class="field">
+            <label for="notes">Notes</label>
+            <textarea id="notes" placeholder="Appearance, coordinates, behaviour…"></textarea>
+        </div>
+
+        <div class="field">
+            <label>Abundance</label>
+            <div class="chip-group">
+                <button class="btn-chip" id="abun-0" onclick="toggleAbundance('Single',0)">Single</button>
+                <button class="btn-chip" id="abun-1" onclick="toggleAbundance('Few (2-5)',1)">Few (2-5)</button>
+                <button class="btn-chip" id="abun-2" onclick="toggleAbundance('Many (6-20)',2)">Many (6-20)</button>
+                <button class="btn-chip" id="abun-3" onclick="toggleAbundance('Abundant (20+)',3)">Abundant (20+)</button>
+            </div>
+        </div>
+
+        <div class="field" id="substrateField" style="display:none">
+            <label>Substrate</label>
+            <div class="chip-group">
+                <button class="btn-chip" id="sub-dead_wood"   onclick="toggleSubstrate('Dead wood')">Dead wood</button>
+                <button class="btn-chip" id="sub-living_tree" onclick="toggleSubstrate('Living tree')">Living tree</button>
+                <button class="btn-chip" id="sub-soil"        onclick="toggleSubstrate('Soil')">Soil</button>
+                <button class="btn-chip" id="sub-leaf_litter" onclick="toggleSubstrate('Leaf litter')">Leaf litter</button>
+                <button class="btn-chip" id="sub-dung"        onclick="toggleSubstrate('Dung')">Dung</button>
+                <button class="btn-chip" id="sub-rock"        onclick="toggleSubstrate('Rock')">Rock</button>
+                <button class="btn-chip" id="sub-other"       onclick="toggleSubstrate('Other')">Other</button>
+            </div>
+        </div>
+
+        <div class="field" id="lifeStageField" style="display:none">
+            <label>Life Stage</label>
+            <div class="btn-group" id="lifeStageGroup"></div>
+        </div>
+
+        <div class="field">
+            <label>Habitat</label>
+            <div class="chip-group">
+                <button class="btn-chip" id="hab-Forest"     onclick="toggleHabitat('Forest')">Forest</button>
+                <button class="btn-chip" id="hab-Riverbank"  onclick="toggleHabitat('Riverbank')">Riverbank</button>
+                <button class="btn-chip" id="hab-Canopy"     onclick="toggleHabitat('Canopy')">Canopy</button>
+                <button class="btn-chip" id="hab-Understory" onclick="toggleHabitat('Understory')">Understory</button>
+                <button class="btn-chip" id="hab-Deadwood"   onclick="toggleHabitat('Deadwood')">Deadwood</button>
+                <button class="btn-chip" id="hab-Soil"       onclick="toggleHabitat('Soil')">Soil</button>
+                <button class="btn-chip" id="hab-Rocky"      onclick="toggleHabitat('Rocky')">Rocky</button>
+                <button class="btn-chip" id="hab-Other"      onclick="toggleHabitat('Other')">Other</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Canopy Cover</label>
+            <div class="btn-group">
+                <button class="btn-toggle" id="can-0" onclick="toggleCanopyCover('Open',0)">Open</button>
+                <button class="btn-toggle" id="can-1" onclick="toggleCanopyCover('Partial',1)">Partial</button>
+                <button class="btn-toggle" id="can-2" onclick="toggleCanopyCover('Closed',2)">Closed</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Weather</label>
+            <div class="btn-group">
+                <button class="btn-toggle" id="wx-Sunny"     onclick="toggleWeather('Sunny')">Sunny</button>
+                <button class="btn-toggle" id="wx-Cloudy"    onclick="toggleWeather('Cloudy')">Cloudy</button>
+                <button class="btn-toggle" id="wx-Raining"   onclick="toggleWeather('Raining')">Raining</button>
+                <button class="btn-toggle" id="wx-afterrain" onclick="toggleWeather('After rain')">After rain</button>
+            </div>
+        </div>
+
+        <div class="field" id="reproStatusField" style="display:none">
+            <label>Reproductive Status</label>
+            <div class="btn-group" id="reproStatusGroup"></div>
+        </div>
+
+        <div class="field">
+            <label>Collected</label>
+            <div class="btn-group">
+                <button class="btn-toggle" id="coll-yes" onclick="toggleCollected('yes')">Yes</button>
+                <button class="btn-toggle" id="coll-no"  onclick="toggleCollected('no')">No</button>
+            </div>
+        </div>
+
+        <div class="field" id="preservField" style="display:none">
+            <label>Preservation Method</label>
+            <div class="chip-group">
+                <button class="btn-chip" id="pres-0" onclick="togglePreserv('Silica gel',0)">Silica gel</button>
+                <button class="btn-chip" id="pres-1" onclick="togglePreserv('Ethanol',1)">Ethanol</button>
+                <button class="btn-chip" id="pres-2" onclick="togglePreserv('Fresh',2)">Fresh</button>
+                <button class="btn-chip" id="pres-3" onclick="togglePreserv('Frozen',3)">Frozen</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Confidence</label>
+            <div class="btn-group">
+                <button class="btn-toggle" id="conf-certain"   onclick="toggleConf('certain')">Certain</button>
+                <button class="btn-toggle" id="conf-probable"  onclick="toggleConf('probable')">Probable</button>
+                <button class="btn-toggle" id="conf-uncertain" onclick="toggleConf('uncertain')">Uncertain</button>
+            </div>
+        </div>
+
+        <button class="btn-save" id="btnSave" onclick="saveObs()">Save Observation</button>
+        <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancel Edit</button>
+    </div>
+
+    <button class="btn-export" id="exportBtn" onclick="exportCSV()">Export CSV</button>
+
+    <div class="section-head">
+        Saved Observations
+        <span class="count-pill" id="countPill">0</span>
+    </div>
+    <div id="obsList"></div>
+
+</div>
+</div><!-- /page-observe -->
+
+<!-- ══════════════════════════════ CHECKLIST PAGE ══════════════════════════════ -->
+<div id="page-checklist" class="page">
+<div class="wrap">
+
+    <div class="header">
+        <h1>Checklist</h1>
+        <div class="cl-header-row">
+            <div class="cl-progress"><div class="cl-progress-fill" id="clProgressFill"></div></div>
+            <div class="cl-stats" id="clStats">0 / 0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="field" style="margin-bottom:0">
+            <label for="clNewItem">Add Item</label>
+            <div class="cl-add-row">
+                <input type="text" id="clNewItem" placeholder="New checklist item…"
+                       autocomplete="off" autocorrect="off" spellcheck="false"
+                       onkeydown="if(event.key==='Enter'){clAddItem();event.preventDefault();}">
+                <button class="btn-cl-add" onclick="clAddItem()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cl-toolbar">
+        <div class="section-head" style="margin-bottom:0">
+            Items
+            <span class="count-pill" id="clCountPill">0</span>
+        </div>
+        <button class="btn-cl-reset" id="clResetBtn" onclick="clResetAll()">Reset all</button>
+    </div>
+    <div id="clList"></div>
+
+</div>
+</div><!-- /page-checklist -->
+
+<!-- ═══════════════════════════════ BOTTOM NAV ════════════════════════════════ -->
+<nav class="bottom-nav">
+    <button class="nav-tab active" id="tab-observe" onclick="switchTab('observe')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Observe
+    </button>
+    <button class="nav-tab" id="tab-checklist" onclick="switchTab('checklist')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        Checklist
+    </button>
+</nav>
+
+<!-- ════════════════ DELETE CONFIRMATION MODAL ════════════════ -->
+<div class="modal-overlay" id="deleteModal" onclick="closeDeleteModal(event)">
+    <div class="modal-box">
+        <div class="modal-msg">
+            <strong id="deleteModalId"></strong>
+            <span class="modal-sub">This cannot be undone.</span>
+        </div>
+        <div class="modal-btns">
+            <button class="modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button class="modal-btn-delete" onclick="doDeleteObs()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════
+       OBSERVE PAGE — all original logic
+       ═══════════════════════════════════════════════════════════ */
+
+    var collected     = null;
+    var confidence    = null;
+    var habitat       = null;
+    var weather       = null;
+    var substrate     = null;
+    var abundance     = null;
+    var lifeStage     = null;
+    var canopyCover   = null;
+    var reproStatus   = null;
+    var preservMethod = null;
+    var editingId     = null;
+
+    var HABITATS   = ['Forest','Riverbank','Canopy','Understory','Deadwood','Soil','Rocky','Other'];
+    var WX_MAP     = {Sunny:'wx-Sunny', Cloudy:'wx-Cloudy', Raining:'wx-Raining', 'After rain':'wx-afterrain'};
+    var SUBSTRATES = ['Dead wood','Living tree','Soil','Leaf litter','Dung','Rock','Other'];
+    var SUBSTRATE_CATS = {FUNGI: true, LICHEN: true, SLIME_MOLD: true};
+    var ABUNDANCE_OPTS = ['Single', 'Few (2-5)', 'Many (6-20)', 'Abundant (20+)'];
+    var CANOPY_OPTS    = ['Open', 'Partial', 'Closed'];
+    var PRESERV_OPTS   = ['Silica gel', 'Ethanol', 'Fresh', 'Frozen'];
+    var LIFE_STAGE_MAP = {
+        FUNGI:  ['Button', 'Mature', 'Old', 'Dried'],
+        PLANTS: ['Vegetative', 'Flowering', 'Fruiting'],
+        LICHEN: ['Vegetative', 'Flowering', 'Fruiting']
+    };
+    var REPRO_STATUS_MAP = {
+        FUNGI:  ['Sporing', 'Not sporing'],
+        PLANTS: ['Flowering', 'Fruiting', 'Neither']
+    };
+
+    function subId(s) { return 'sub-' + s.toLowerCase().replace(/ /g, '_'); }
+    function isSubstrateCat(cat) { return SUBSTRATE_CATS[cat] === true; }
+
+    function onCategoryChange() {
+        var cat  = document.getElementById('category').value;
+        var show = isSubstrateCat(cat);
+        document.getElementById('substrateField').style.display = show ? 'block' : 'none';
+        if (!show && substrate) {
+            substrate = null;
+            SUBSTRATES.forEach(function(s) { document.getElementById(subId(s)).classList.remove('active'); });
+        }
+        updateConditionalFields(cat);
+    }
+
+    // ── Clock ─────────────────────────────────────────────────────
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function fmtDate(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+               ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function fmtISO(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+               'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function todayPrefix() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    }
+
+    function tickClock() {
+        document.getElementById('liveTime').textContent = fmtDate(new Date());
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    // ── Observation storage ───────────────────────────────────────
+    function loadAll() {
+        try { return JSON.parse(localStorage.getItem('fieldObs') || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function storeAll(obs) {
+        localStorage.setItem('fieldObs', JSON.stringify(obs));
+    }
+
+    function makeId(obs) {
+        return 'OBS_' + String(obs.length + 1).padStart(3, '0');
+    }
+
+    // ── Toggle helpers ────────────────────────────────────────────
+    function setActive(ids, activeId) {
+        ids.forEach(function(id) {
+            document.getElementById(id).classList.toggle('active', id === activeId);
+        });
+    }
+
+    function toggleCollected(val) {
+        if (collected === val) { collected = null; setActive(['coll-yes','coll-no'], null); }
+        else { collected = val; setActive(['coll-yes','coll-no'], 'coll-' + val); }
+        updatePreservField();
+    }
+
+    function toggleConf(val) {
+        if (confidence === val) { confidence = null; setActive(['conf-certain','conf-probable','conf-uncertain'], null); }
+        else { confidence = val; setActive(['conf-certain','conf-probable','conf-uncertain'], 'conf-' + val); }
+    }
+
+    function toggleHabitat(val) {
+        if (habitat === val) {
+            habitat = null;
+            HABITATS.forEach(function(h) { document.getElementById('hab-'+h).classList.remove('active'); });
+        } else {
+            habitat = val;
+            HABITATS.forEach(function(h) { document.getElementById('hab-'+h).classList.toggle('active', h === val); });
+        }
+    }
+
+    function toggleWeather(val) {
+        if (weather === val) {
+            weather = null;
+            Object.keys(WX_MAP).forEach(function(k) { document.getElementById(WX_MAP[k]).classList.remove('active'); });
+        } else {
+            weather = val;
+            Object.keys(WX_MAP).forEach(function(k) { document.getElementById(WX_MAP[k]).classList.toggle('active', k === val); });
+        }
+    }
+
+    function toggleSubstrate(val) {
+        if (substrate === val) {
+            substrate = null;
+            SUBSTRATES.forEach(function(s) { document.getElementById(subId(s)).classList.remove('active'); });
+        } else {
+            substrate = val;
+            SUBSTRATES.forEach(function(s) { document.getElementById(subId(s)).classList.toggle('active', s === val); });
+        }
+    }
+
+    function toggleAbundance(val, idx) {
+        if (abundance === val) {
+            abundance = null;
+            ABUNDANCE_OPTS.forEach(function(o, i) { document.getElementById('abun-'+i).classList.remove('active'); });
+        } else {
+            abundance = val;
+            ABUNDANCE_OPTS.forEach(function(o, i) { document.getElementById('abun-'+i).classList.toggle('active', i === idx); });
+        }
+    }
+
+    function toggleCanopyCover(val, idx) {
+        if (canopyCover === val) {
+            canopyCover = null;
+            CANOPY_OPTS.forEach(function(o, i) { document.getElementById('can-'+i).classList.remove('active'); });
+        } else {
+            canopyCover = val;
+            CANOPY_OPTS.forEach(function(o, i) { document.getElementById('can-'+i).classList.toggle('active', i === idx); });
+        }
+    }
+
+    function togglePreserv(val, idx) {
+        if (preservMethod === val) {
+            preservMethod = null;
+            PRESERV_OPTS.forEach(function(o, i) { document.getElementById('pres-'+i).classList.remove('active'); });
+        } else {
+            preservMethod = val;
+            PRESERV_OPTS.forEach(function(o, i) { document.getElementById('pres-'+i).classList.toggle('active', i === idx); });
+        }
+    }
+
+    function toggleLifeStage(val, idx) {
+        var cat  = document.getElementById('category').value;
+        var opts = LIFE_STAGE_MAP[cat] || [];
+        if (lifeStage === val) {
+            lifeStage = null;
+            opts.forEach(function(o, i) { document.getElementById('ls-'+i).classList.remove('active'); });
+        } else {
+            lifeStage = val;
+            opts.forEach(function(o, i) { document.getElementById('ls-'+i).classList.toggle('active', i === idx); });
+        }
+    }
+
+    function toggleReproStatus(val, idx) {
+        var cat  = document.getElementById('category').value;
+        var opts = REPRO_STATUS_MAP[cat] || [];
+        if (reproStatus === val) {
+            reproStatus = null;
+            opts.forEach(function(o, i) { document.getElementById('rs-'+i).classList.remove('active'); });
+        } else {
+            reproStatus = val;
+            opts.forEach(function(o, i) { document.getElementById('rs-'+i).classList.toggle('active', i === idx); });
+        }
+    }
+
+    function updateConditionalFields(cat) {
+        if (cat === undefined) cat = document.getElementById('category').value;
+
+        var lsOpts  = LIFE_STAGE_MAP[cat];
+        var lsField = document.getElementById('lifeStageField');
+        if (lsOpts) {
+            var lsHtml = '';
+            lsOpts.forEach(function(o, i) {
+                var cls = 'btn-toggle' + (lifeStage === o ? ' active' : '');
+                lsHtml += '<button class="' + cls + '" id="ls-' + i + '" onclick="toggleLifeStage(\'' + o.replace(/'/g, "\\'") + '\',' + i + ')">' + o + '</button>';
+            });
+            document.getElementById('lifeStageGroup').innerHTML = lsHtml;
+            lsField.style.display = 'block';
+        } else {
+            lsField.style.display = 'none';
+            lifeStage = null;
+        }
+
+        var rsOpts  = REPRO_STATUS_MAP[cat];
+        var rsField = document.getElementById('reproStatusField');
+        if (rsOpts) {
+            var rsHtml = '';
+            rsOpts.forEach(function(o, i) {
+                var cls = 'btn-toggle' + (reproStatus === o ? ' active' : '');
+                rsHtml += '<button class="' + cls + '" id="rs-' + i + '" onclick="toggleReproStatus(\'' + o.replace(/'/g, "\\'") + '\',' + i + ')">' + o + '</button>';
+            });
+            document.getElementById('reproStatusGroup').innerHTML = rsHtml;
+            rsField.style.display = 'block';
+        } else {
+            rsField.style.display = 'none';
+            reproStatus = null;
+        }
+    }
+
+    function updatePreservField() {
+        var preservField = document.getElementById('preservField');
+        if (collected === 'yes') {
+            preservField.style.display = 'block';
+        } else {
+            preservField.style.display = 'none';
+            preservMethod = null;
+            PRESERV_OPTS.forEach(function(o, i) { document.getElementById('pres-'+i).classList.remove('active'); });
+        }
+    }
+
+    // ── Form helpers ──────────────────────────────────────────────
+    function refreshNextId() {
+        var el = document.getElementById('nextId');
+        el.textContent = 'Next: ' + makeId(loadAll());
+        el.className = 'next-id';
+    }
+
+    function refreshCounts() {
+        var obs = loadAll(), prefix = todayPrefix(), todayCnt = 0;
+        for (var i = 0; i < obs.length; i++) {
+            if (obs[i].timestamp.indexOf(prefix) === 0) todayCnt++;
+        }
+        document.getElementById('headerCounts').textContent =
+            'Today: ' + todayCnt + '  ·  Total: ' + obs.length;
+    }
+
+    function resetForm() {
+        document.getElementById('category').value = '';
+        document.getElementById('species').value  = '';
+        document.getElementById('notes').value    = '';
+        collected = null; confidence = null; habitat = null; weather = null; substrate = null;
+        abundance = null; lifeStage = null; canopyCover = null; reproStatus = null; preservMethod = null;
+        editingId = null;
+
+        ['coll-yes','coll-no','conf-certain','conf-probable','conf-uncertain',
+         'wx-Sunny','wx-Cloudy','wx-Raining','wx-afterrain']
+            .concat(HABITATS.map(function(h) { return 'hab-'+h; }))
+            .concat(SUBSTRATES.map(subId))
+            .concat(ABUNDANCE_OPTS.map(function(o, i) { return 'abun-'+i; }))
+            .concat(CANOPY_OPTS.map(function(o, i) { return 'can-'+i; }))
+            .concat(PRESERV_OPTS.map(function(o, i) { return 'pres-'+i; }))
+            .forEach(function(id) { document.getElementById(id).classList.remove('active'); });
+
+        document.getElementById('substrateField').style.display = 'none';
+        document.getElementById('lifeStageField').style.display = 'none';
+        document.getElementById('lifeStageGroup').innerHTML = '';
+        document.getElementById('reproStatusField').style.display = 'none';
+        document.getElementById('reproStatusGroup').innerHTML = '';
+        document.getElementById('preservField').style.display = 'none';
+
+        var btn = document.getElementById('btnSave');
+        btn.textContent = 'Save Observation';
+        btn.className = 'btn-save';
+        document.getElementById('btnCancel').style.display = 'none';
+        refreshNextId();
+    }
+
+    // ── Save new ──────────────────────────────────────────────────
+    function saveObs() {
+        if (editingId) { updateObs(); return; }
+        var cat = document.getElementById('category').value;
+        if (!cat) { showToast('Please select a category'); return; }
+        var obs = loadAll();
+        obs.push({
+            id:            makeId(obs),
+            timestamp:     fmtISO(new Date()),
+            category:      cat,
+            species:       document.getElementById('species').value.trim(),
+            notes:         document.getElementById('notes').value.trim(),
+            abundance:     abundance     || '',
+            lifeStage:     lifeStage     || '',
+            substrate:     substrate     || '',
+            habitat:       habitat       || '',
+            canopyCover:   canopyCover   || '',
+            weather:       weather       || '',
+            reproStatus:   reproStatus   || '',
+            collected:     collected     || '',
+            preservMethod: preservMethod || '',
+            confidence:    confidence    || ''
+        });
+        storeAll(obs);
+        showToast(obs[obs.length-1].id + ' saved');
+        resetForm(); renderList(); refreshCounts();
+    }
+
+    // ── Update existing ───────────────────────────────────────────
+    function updateObs() {
+        var cat = document.getElementById('category').value;
+        if (!cat) { showToast('Please select a category'); return; }
+        var obs = loadAll();
+        for (var i = 0; i < obs.length; i++) {
+            if (obs[i].id === editingId) {
+                obs[i].category      = cat;
+                obs[i].species       = document.getElementById('species').value.trim();
+                obs[i].notes         = document.getElementById('notes').value.trim();
+                obs[i].abundance     = abundance     || '';
+                obs[i].lifeStage     = lifeStage     || '';
+                obs[i].substrate     = substrate     || '';
+                obs[i].habitat       = habitat       || '';
+                obs[i].canopyCover   = canopyCover   || '';
+                obs[i].weather       = weather       || '';
+                obs[i].reproStatus   = reproStatus   || '';
+                obs[i].collected     = collected     || '';
+                obs[i].preservMethod = preservMethod || '';
+                obs[i].confidence    = confidence    || '';
+                break;
+            }
+        }
+        storeAll(obs);
+        showToast(editingId + ' updated');
+        resetForm(); renderList(); refreshCounts();
+    }
+
+    // ── Load into form for editing ────────────────────────────────
+    function editObs(id) {
+        var obs = loadAll(), entry = null;
+        for (var i = 0; i < obs.length; i++) { if (obs[i].id === id) { entry = obs[i]; break; } }
+        if (!entry) return;
+
+        document.getElementById('category').value = entry.category;
+        document.getElementById('species').value  = entry.species  || '';
+        document.getElementById('notes').value    = entry.notes    || '';
+
+        collected = entry.collected || null;
+        setActive(['coll-yes','coll-no'], collected ? 'coll-'+collected : null);
+
+        confidence = entry.confidence || null;
+        setActive(['conf-certain','conf-probable','conf-uncertain'], confidence ? 'conf-'+confidence : null);
+
+        habitat = entry.habitat || null;
+        HABITATS.forEach(function(h) { document.getElementById('hab-'+h).classList.toggle('active', h === habitat); });
+
+        weather = entry.weather || null;
+        Object.keys(WX_MAP).forEach(function(k) { document.getElementById(WX_MAP[k]).classList.toggle('active', k === weather); });
+
+        substrate = entry.substrate || null;
+        var showSub = isSubstrateCat(entry.category);
+        document.getElementById('substrateField').style.display = showSub ? 'block' : 'none';
+        SUBSTRATES.forEach(function(s) { document.getElementById(subId(s)).classList.toggle('active', s === substrate); });
+
+        abundance = entry.abundance || null;
+        ABUNDANCE_OPTS.forEach(function(o, i) { document.getElementById('abun-'+i).classList.toggle('active', o === abundance); });
+
+        canopyCover = entry.canopyCover || null;
+        CANOPY_OPTS.forEach(function(o, i) { document.getElementById('can-'+i).classList.toggle('active', o === canopyCover); });
+
+        lifeStage   = entry.lifeStage   || null;
+        reproStatus = entry.reproStatus || null;
+        updateConditionalFields(entry.category);
+
+        preservMethod = entry.preservMethod || null;
+        updatePreservField();
+        if (preservMethod) {
+            PRESERV_OPTS.forEach(function(o, i) { document.getElementById('pres-'+i).classList.toggle('active', o === preservMethod); });
+        }
+
+        editingId = id;
+        var nextEl = document.getElementById('nextId');
+        nextEl.textContent = 'Editing: ' + id;
+        nextEl.className = 'next-id editing';
+
+        var btn = document.getElementById('btnSave');
+        btn.textContent = 'Update Observation';
+        btn.className = 'btn-update';
+        document.getElementById('btnCancel').style.display = 'block';
+
+        document.querySelector('#page-observe .card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelEdit() { resetForm(); showToast('Edit cancelled'); }
+
+    // ── Render observation list ───────────────────────────────────
+    function esc(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderList() {
+        var obs = loadAll();
+        document.getElementById('countPill').textContent = obs.length;
+        document.getElementById('exportBtn').style.display = obs.length ? 'block' : 'none';
+        var el = document.getElementById('obsList');
+
+        if (!obs.length) {
+            el.innerHTML = '<div class="empty-state">No observations yet.<br>Fill in the form above to record your first one.</div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = obs.length - 1; i >= 0; i--) {
+            var o = obs[i];
+            var confBadge  = o.confidence   ? '<span class="badge b-'+o.confidence+'">'+o.confidence.toUpperCase()+'</span>' : '';
+            var collBadge  = o.collected === 'yes' ? '<span class="badge b-collected">COLLECTED</span>' : '';
+            var habBadge   = o.habitat      ? '<span class="badge b-habitat">'+esc(o.habitat)+'</span>' : '';
+            var wxBadge    = o.weather      ? '<span class="badge b-weather">'+esc(o.weather)+'</span>' : '';
+            var subBadge   = o.substrate    ? '<span class="badge b-substrate">'+esc(o.substrate)+'</span>' : '';
+            var abunBadge  = o.abundance    ? '<span class="badge b-abundance">'+esc(o.abundance)+'</span>' : '';
+            var lsBadge    = o.lifeStage    ? '<span class="badge b-lifestage">'+esc(o.lifeStage)+'</span>' : '';
+            var canBadge   = o.canopyCover  ? '<span class="badge b-canopy">'+esc(o.canopyCover)+'</span>' : '';
+            var rsBadge    = o.reproStatus  ? '<span class="badge b-repro">'+esc(o.reproStatus)+'</span>' : '';
+            var presBadge  = o.preservMethod ? '<span class="badge b-preserv">'+esc(o.preservMethod)+'</span>' : '';
+            var notesHtml = o.notes     ? '<div class="obs-notes">'+esc(o.notes)+'</div>' : '';
+            var speciesHtml = o.species ? esc(o.species) : '<span style="color:#bbb;font-style:italic">no name</span>';
+
+            html += '<div class="obs-item cat-'+o.category+'">' +
+                '<div class="obs-row1">' +
+                    '<span class="obs-id-tag">'+o.id+'</span>' +
+                    '<div class="obs-row1-right">' +
+                        '<span class="obs-cat-tag">'+o.category+'</span>' +
+                        '<button class="btn-edit" onclick="editObs(\''+o.id+'\')">Edit</button>' +
+                        '<button class="btn-delete-obs" onclick="confirmDeleteObs(\''+o.id+'\')">Delete</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="obs-species">'+speciesHtml+'</div>' +
+                '<div class="obs-meta"><span class="obs-ts">'+o.timestamp+'</span>'+abunBadge+lsBadge+canBadge+rsBadge+habBadge+wxBadge+subBadge+confBadge+collBadge+presBadge+'</div>' +
+                notesHtml +
+            '</div>';
+        }
+        el.innerHTML = html;
+    }
+
+    // ── Export CSV ────────────────────────────────────────────────
+    function csvCell(val) {
+        var s = String(val == null ? '' : val);
+        return (s.indexOf(',') !== -1 || s.indexOf('\n') !== -1 || s.indexOf('"') !== -1)
+            ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+
+    function exportCSV() {
+        var obs = loadAll();
+        if (!obs.length) return;
+        var cols = ['id','timestamp','category','species','notes','abundance','lifeStage','canopyCover','reproStatus','habitat','weather','substrate','collected','preservMethod','confidence'];
+        var rows = [cols.join(',')];
+        obs.forEach(function(o) { rows.push(cols.map(function(c) { return csvCell(o[c]); }).join(',')); });
+        var csv = rows.join('\r\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var d = new Date();
+        a.href = url;
+        a.download = 'observations_' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('CSV downloaded');
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       CHECKLIST PAGE
+       ═══════════════════════════════════════════════════════════ */
+
+    var CL_DEFAULTS = [
+        'Camera charged',
+        'Camera clock set to UTC',
+        'Memory card empty',
+        'Geo Tracker started',
+        'Phone charged',
+        'Field notebook',
+        'Pencils',
+        'Sample bags',
+        'Hand lens',
+        'GPS signal confirmed'
+    ];
+
+    var pendingDeleteId = null;
+
+    function confirmDeleteObs(id) {
+        pendingDeleteId = id;
+        document.getElementById('deleteModalId').textContent = 'Delete ' + id + '?';
+        document.getElementById('deleteModal').classList.add('open');
+    }
+
+    function closeDeleteModal(event) {
+        // When called from the overlay onclick, only close if the backdrop itself was tapped
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('deleteModal').classList.remove('open');
+        pendingDeleteId = null;
+    }
+
+    function doDeleteObs() {
+        if (!pendingDeleteId) return;
+        var id = pendingDeleteId;
+        storeAll(loadAll().filter(function(o) { return o.id !== id; }));
+        document.getElementById('deleteModal').classList.remove('open');
+        pendingDeleteId = null;
+        renderList();
+        refreshCounts();
+        refreshNextId();
+        showToast(id + ' deleted');
+    }
+
+    var clEditingId = null;
+
+    function clLoad() {
+        var raw = localStorage.getItem('fieldChecklist');
+        if (raw) { try { return JSON.parse(raw); } catch(e) {} }
+        // First use: seed defaults
+        var items = CL_DEFAULTS.map(function(text, i) {
+            return { id: 'cl_' + (i + 1), text: text, checked: false };
+        });
+        localStorage.setItem('fieldChecklist', JSON.stringify(items));
+        return items;
+    }
+
+    function clStore(items) {
+        localStorage.setItem('fieldChecklist', JSON.stringify(items));
+    }
+
+    function clNextId(items) {
+        var max = 0;
+        items.forEach(function(it) {
+            var n = parseInt(it.id.replace('cl_', ''), 10);
+            if (!isNaN(n) && n > max) max = n;
+        });
+        return 'cl_' + (max + 1);
+    }
+
+    function clAddItem() {
+        var input = document.getElementById('clNewItem');
+        var text = input.value.trim();
+        if (!text) { showToast('Enter item text first'); return; }
+        var items = clLoad();
+        items.push({ id: clNextId(items), text: text, checked: false });
+        clStore(items);
+        input.value = '';
+        clRender();
+        showToast('Item added');
+    }
+
+    function clToggle(id, checked) {
+        var items = clLoad();
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].id === id) { items[i].checked = checked; break; }
+        }
+        clStore(items);
+        clRefreshStats(items);
+    }
+
+    function clDelete(id) {
+        clStore(clLoad().filter(function(it) { return it.id !== id; }));
+        clRender();
+    }
+
+    function clResetAll() {
+        clStore(clLoad().map(function(it) { return { id: it.id, text: it.text, checked: false }; }));
+        clRender();
+        showToast('All items unchecked');
+    }
+
+    function clStartEdit(id) {
+        clEditingId = id;
+        clRender();
+        var input = document.getElementById('cledit-' + id);
+        if (input) { input.focus(); input.select(); }
+    }
+
+    function clSaveEdit(id) {
+        var input = document.getElementById('cledit-' + id);
+        var text = input ? input.value.trim() : '';
+        if (!text) { showToast('Item text cannot be empty'); return; }
+        var items = clLoad();
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].id === id) { items[i].text = text; break; }
+        }
+        clStore(items);
+        clEditingId = null;
+        clRender();
+    }
+
+    function clCancelEdit() {
+        clEditingId = null;
+        clRender();
+    }
+
+    function clRefreshStats(items) {
+        if (!items) items = clLoad();
+        var total   = items.length;
+        var checked = 0;
+        items.forEach(function(it) { if (it.checked) checked++; });
+        document.getElementById('clStats').textContent = checked + ' / ' + total;
+        document.getElementById('clCountPill').textContent = total;
+        var pct = total ? Math.round(checked / total * 100) : 0;
+        document.getElementById('clProgressFill').style.width = pct + '%';
+    }
+
+    function clRender() {
+        var items = clLoad();
+        clRefreshStats(items);
+        document.getElementById('clResetBtn').style.display = items.length ? 'block' : 'none';
+
+        var el = document.getElementById('clList');
+        if (!items.length) {
+            el.innerHTML = '<div class="empty-state">No items yet.<br>Add one above.</div>';
+            return;
+        }
+
+        var html = '';
+        items.forEach(function(it) {
+            if (clEditingId === it.id) {
+                html +=
+                    '<div class="cl-item cl-editing">' +
+                        '<input class="cl-edit-input" id="cledit-' + it.id + '" type="text" value="' + esc(it.text) + '"' +
+                            ' autocomplete="off" autocorrect="off" spellcheck="false"' +
+                            ' onkeydown="if(event.key===\'Enter\'){clSaveEdit(\'' + it.id + '\');event.preventDefault();}' +
+                                       'else if(event.key===\'Escape\'){clCancelEdit();}">' +
+                        '<div class="cl-actions">' +
+                            '<button class="btn-cl-action btn-cl-save" onclick="clSaveEdit(\'' + it.id + '\')">Save</button>' +
+                            '<button class="btn-cl-action" onclick="clCancelEdit()">Cancel</button>' +
+                        '</div>' +
+                    '</div>';
+            } else {
+                html +=
+                    '<div class="cl-item' + (it.checked ? ' cl-done' : '') + '">' +
+                        '<label class="cl-label">' +
+                            '<input class="cl-check" type="checkbox"' + (it.checked ? ' checked' : '') +
+                                ' onchange="clToggle(\'' + it.id + '\', this.checked)">' +
+                            '<span class="cl-text">' + esc(it.text) + '</span>' +
+                        '</label>' +
+                        '<div class="cl-actions">' +
+                            '<button class="btn-cl-action" onclick="clStartEdit(\'' + it.id + '\')">Edit</button>' +
+                            '<button class="btn-cl-action btn-cl-del" onclick="clDelete(\'' + it.id + '\')">&times;</button>' +
+                        '</div>' +
+                    '</div>';
+            }
+        });
+        el.innerHTML = html;
+
+        if (clEditingId) {
+            var inp = document.getElementById('cledit-' + clEditingId);
+            if (inp) { inp.focus(); inp.select(); }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB NAVIGATION
+       ═══════════════════════════════════════════════════════════ */
+
+    function switchTab(tab) {
+        document.getElementById('page-observe').classList.toggle('active',   tab === 'observe');
+        document.getElementById('page-checklist').classList.toggle('active', tab === 'checklist');
+        document.getElementById('tab-observe').classList.toggle('active',    tab === 'observe');
+        document.getElementById('tab-checklist').classList.toggle('active',  tab === 'checklist');
+        window.scrollTo(0, 0);
+        if (tab === 'checklist') clRender();
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SHARED UTILITIES
+       ═══════════════════════════════════════════════════════════ */
+
+    var toastTimer = null;
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2200);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       INIT
+       ═══════════════════════════════════════════════════════════ */
+
+    refreshNextId();
+    refreshCounts();
+    renderList();
+    clRefreshStats();   // populate checklist counter in header without full render
+
+    /* ═══════════════════════════════════════════════════════════
+       PWA: manifest + service worker
+       ═══════════════════════════════════════════════════════════ */
+    (function() {
+        var svg =
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+            '<rect width="100" height="100" rx="18" fill="#1a1a2e"/>' +
+            '<path d="M50 82Q28 80 20 58Q14 38 50 14Q86 38 80 58Q72 80 50 82Z" fill="#3d8a2a"/>' +
+            '<line x1="50" y1="82" x2="50" y2="94" stroke="#2a5a18" stroke-width="3.5" stroke-linecap="round"/>' +
+            '<line x1="50" y1="80" x2="50" y2="26" stroke="#1a3a0e" stroke-width="2.5" stroke-linecap="round"/>' +
+            '<path d="M50 64Q36 57 32 44" stroke="#6abe48" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+            '<path d="M50 52Q64 45 68 32" stroke="#6abe48" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+            '</svg>';
+
+        var icon = 'data:image/svg+xml;base64,' + btoa(svg);
+        document.getElementById('apple-touch-icon').href = icon;
+
+        var manifest = JSON.stringify({
+            name: 'Field Observation',
+            short_name: 'FieldObs',
+            description: 'Offline field observation recorder',
+            start_url: './',
+            display: 'standalone',
+            orientation: 'portrait-primary',
+            background_color: '#1a1a2e',
+            theme_color: '#2d5016',
+            icons: [
+                { src: icon, sizes: '192x192', type: 'image/svg+xml' },
+                { src: icon, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+            ]
+        });
+        var mBlob = new Blob([manifest], { type: 'application/manifest+json' });
+        document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
+
+        if (!('serviceWorker' in navigator)) return;
+        var pageUrl = location.href.split('?')[0].split('#')[0];
+        var swSrc = [
+            'var CACHE="fieldobs-v1",PAGE="' + pageUrl.replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '";',
+            'self.addEventListener("install",function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.add(PAGE);}).then(function(){return self.skipWaiting();}));});',
+            'self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));}).then(function(){return self.clients.claim();}));});',
+            'self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(caches.match(e.request).then(function(r){if(r)return r;return fetch(e.request).then(function(res){if(res.ok)caches.open(CACHE).then(function(c){c.put(e.request,res.clone());});return res;});}));});'
+        ].join('\n');
+        var swBlob = new Blob([swSrc], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob), { scope: './' })
+            .catch(function(e) { console.warn('SW skipped:', e.message); });
+    })();
+</script>
+</body>
+</html>
