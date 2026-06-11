@@ -1,8 +1,13 @@
-import csv
+﻿import csv
 import os
 from datetime import date
 
-CSV_PATH = "data/test_fungi_survey.csv"
+import glob
+_csvs = sorted(glob.glob("data/*.csv"), key=os.path.getmtime, reverse=True)
+if not _csvs:
+    print("ERROR: No CSV files found in data/")
+    exit(1)
+CSV_PATH = _csvs[0]
 TODAY = date.today()
 REPORT_PATH = f"reports/fungi_check_{TODAY}.md"
 
@@ -95,7 +100,7 @@ w("---")
 w()
 w("## 1. Column Check")
 w()
-w("All required columns present. ✓")
+w("All required columns present. âœ“")
 w()
 w("---")
 w()
@@ -243,3 +248,5 @@ with open(REPORT_PATH, "w", encoding="utf-8") as f:
     f.write("\n".join(lines) + "\n")
 
 print(f"Report written to {REPORT_PATH}")
+
+
