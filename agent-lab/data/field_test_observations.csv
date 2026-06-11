@@ -1,0 +1,16 @@
+id,timestamp,category,species,site,observer,notes,abundance,lifeStage,canopyCover,reproStatus,habitat,weather,substrate,collected,preservMethod,confidence
+OBS_001,2026-06-11T08:15:00,FUNGI,Amanita muscaria,Cocha Cashu Trail A,Celil Acar,Large red cap,Single,Mature,Partial,Sporing,Forest,Cloudy,Soil,yes,Ethanol,certain
+OBS_002,2026-06-11T08:32:00,FUNGI,Trametes versicolor,Cocha Cashu Trail A,Celil Acar,Multiple brackets,Many (6-20),Mature,Partial,Sporing,Deadwood,Cloudy,Dead wood,no,,certain
+OBS_003,2026-06-11T08:45:00,PLANTS,Heliconia bihai,Cocha Cashu Trail A,Celil Acar,Flowering clump,Few (2-5),Flowering,Open,Flowering,Riverbank,Cloudy,,no,,certain
+OBS_004,2026-06-11T09:02:00,FUNGI,Phallus indusiatus,Cocha Cashu Trail A,Celil Acar,Strong smell,Single,Mature,Closed,Sporing,Forest,After rain,Soil,yes,Ethanol,certain
+OBS_005,2026-06-11T09:18:00,FUNGI,Ganoderma applanatum,Cocha Cashu Trail A,Celil Acar,Large polypore,Single,Mature,Closed,,Forest,After rain,Living tree,no,,certain
+OBS_006,2026-06-11T09:35:00,PLANTS,Cecropia peltata,Cocha Cashu Trail A,Celil Acar,Pioneer tree,Single,Vegetative,Open,,Forest,Sunny,,no,,certain
+OBS_007,2026-06-11T09:52:00,FUNGI,Mycena chlorophos,Cocha Cashu Trail A,Celil Acar,Bioluminescent,Many (6-20),Mature,Closed,Sporing,Forest,Cloudy,Leaf litter,yes,Silica gel,probable
+OBS_008,2026-06-11T10:10:00,LICHEN,Usnea longissima,Cocha Cashu Trail A,Celil Acar,Hanging 2m,Abundant (20+),Vegetative,Partial,,Canopy,Sunny,Living tree,no,,certain
+OBS_009,2026-06-11T10:28:00,FUNGI,Marasmius rotula,Cocha Cashu Trail A,Celil Acar,Tiny wheel caps,Many (6-20),Mature,Closed,Sporing,Forest,Cloudy,Dead wood,no,,certain
+OBS_010,2026-06-11T10:45:00,FUNGI,Boletus edulis,Cocha Cashu Trail A,Celil Acar,Brown cap thick stem,Single,Mature,Partial,Sporing,Forest,After rain,Soil,yes,Silica gel,probable
+OBS_011,2026-06-11T11:02:00,FUNGI,amanita muscaria,Cocha Cashu Trail A,Celil Acar,Second specimen,Single,Button,Partial,,Forest,Cloudy,Soil,no,,uncertain
+OBS_012,2026-06-11T11:20:00,FUNGI,Trametes versicolor,Los amigos river bank,Celil Acar,Riverbank log,Few (2-5),Mature,Open,Sporing,Riverbank,Sunny,Dead wood,no,,certain
+OBS_013,2026-06-11T11:38:00,PLANTS,,Cocha Cashu Trail A,Celil Acar,Unknown herb,Single,Flowering,Partial,Flowering,Understory,Cloudy,,no,,uncertain
+OBS_014,2026-06-11T11:55:00,FUNGI,Lentinus tigrinus,Cocha Cashu Trail A,Celil Acar,Striped funnel caps,Few (2-5),Mature,Open,Sporing,Riverbank,Sunny,,yes,Ethanol,probable
+OBS_015,2026-06-11T12:10:00,FUNGI,Trametes versicolor,Cocha Cashu Trail A,Celil Acar,Multiple brackets,Many (6-20),Mature,Partial,Sporing,Deadwood,Cloudy,Dead wood,no,,certain

@@ -1,6 +1,6 @@
 # Fungi Survey Check Report
 
-**File:** data/test_fungi_survey.csv  
+**File:** data\field_test_observations.csv  
 **Date of check:** 2026-06-11  
 **Agent:** fungi_survey_checker_v1
 
@@ -8,7 +8,7 @@
 
 ## 1. Column Check
 
-All required columns present. ✓
+All required columns present. âœ“
 
 ---
 
@@ -16,21 +16,22 @@ All required columns present. ✓
 
 | Metric | Value |
 |--------|-------|
-| Total rows (excluding header) | 1 |
-| Unique sites (raw) | 1 |
+| Total rows (excluding header) | 15 |
+| Unique sites (raw) | 2 |
 | Unique observers (raw) | 1 |
 
 ---
 
 ## 3. Unique Sites Found
 
-- lln *(invalid - see Section 10)*
+- Cocha Cashu Trail A
+- Los amigos river bank *(invalid - see Section 10)*
 
 ---
 
 ## 4. Unique Observers Found
 
-- jknln *(invalid - see Section 11)*
+- Celil Acar
 
 ---
 
@@ -38,7 +39,7 @@ All required columns present. ✓
 
 | Row | timestamp | site | observer | notes |
 |-----|-----------|------|----------|-------|
-| 1 | 2026-06-11T16:23:06 | lln | jknln |  |
+| 13 | 2026-06-11T11:38:00 | Cocha Cashu Trail A | Celil Acar | Unknown herb |
 
 ---
 
@@ -52,7 +53,10 @@ None.
 
 | Row | timestamp | site | species | observer |
 |-----|-----------|------|---------|----------|
-| 1 | 2026-06-11T16:23:06 | lln |  | jknln |
+| 3 | 2026-06-11T08:45:00 | Cocha Cashu Trail A | Heliconia bihai | Celil Acar |
+| 6 | 2026-06-11T09:35:00 | Cocha Cashu Trail A | Cecropia peltata | Celil Acar |
+| 13 | 2026-06-11T11:38:00 | Cocha Cashu Trail A |  | Celil Acar |
+| 14 | 2026-06-11T11:55:00 | Cocha Cashu Trail A | Lentinus tigrinus | Celil Acar |
 
 ---
 
@@ -66,7 +70,9 @@ None.
 
 Expected format: first word capitalised, second word lowercase (e.g. `Amanita muscaria`).
 
-None.
+| Row | species | Issue |
+|-----|---------|-------|
+| 11 | amanita muscaria | All lowercase |
 
 ---
 
@@ -76,7 +82,7 @@ Known valid sites: `Cocha Cashu Trail A`, `Los Amigos River Bank`, `Pantano Plot
 
 | Row | site (as recorded) | Issue |
 |-----|--------------------|-------|
-| 1 | lln | Does not match a known site |
+| 12 | Los amigos river bank | Does not match a known site |
 
 ---
 
@@ -84,9 +90,7 @@ Known valid sites: `Cocha Cashu Trail A`, `Los Amigos River Bank`, `Pantano Plot
 
 Known valid observers: `Celil Acar`, `Maria Lopez`
 
-| Row | observer (as recorded) | Issue |
-|-----|------------------------|-------|
-| 1 | jknln | Does not match a known observer |
+None.
 
 ---
 
@@ -96,9 +100,9 @@ Known valid observers: `Celil Acar`, `Maria Lopez`
 |-------|-------------|
 | Missing species | 1 row(s) |
 | Future date | 0 row(s) |
-| Missing substrate | 1 row(s) |
+| Missing substrate | 4 row(s) |
 | Exact duplicates | 0 pair(s) |
-| Species name format | 0 row(s) |
+| Species name format | 1 row(s) |
 | Invalid site | 1 row(s) |
-| Invalid observer | 1 row(s) |
-| **Total flagged rows** | **1** |
+| Invalid observer | 0 row(s) |
+| **Total flagged rows** | **6** |
