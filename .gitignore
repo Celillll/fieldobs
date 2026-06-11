@@ -1,0 +1,30 @@
+﻿# Images
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.png
+*.PNG
+*.gif
+*.tiff
+*.tif
+*.raw
+*.CR2
+*.NEF
+
+# GPS and field data exports
+*.gpx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
