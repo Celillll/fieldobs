@@ -1,0 +1,14 @@
+{
+    "observation_id": "OBS_033",
+    "date": "2026-06-13",
+    "category": "UNKNOWN",
+    "species": "unknown",
+    "gps_lat": -12.8285469,
+    "gps_lon": -69.4058066,
+    "photo_count": 3,
+    "photos": [
+        "IMG_0334.JPG",
+        "IMG_0336.JPG",
+        "IMG_0337.JPG"
+    ]
+}
