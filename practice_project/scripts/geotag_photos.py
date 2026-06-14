@@ -1,6 +1,6 @@
 """Match JPG photos to GPS coordinates using GPX track timestamps."""
 
-import json
+import csv
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -9,11 +9,24 @@ from PIL import Image
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
-GPX_FILE = PROJECT_DIR / "00_INBOX/tracks/17_May_2026_12_53_06.gpx"
-PHOTOS_DIR = PROJECT_DIR / "00_INBOX/photos_unsorted"
-OBSERVATIONS_DIR = PROJECT_DIR / "01_SORTED_OBSERVATIONS"
-CAMERA_UTC_OFFSET = 0  # hours — camera clock is UTC
+
+CAMERA_UTC_OFFSET = -5  # camera is Peru local time; subtract 5 h to get UTC
 MAX_TIME_DIFF_S = 7200  # 2 hours
+
+SURVEYS = [
+    {
+        "name": "Survey 1",
+        "photos_dir": PROJECT_DIR / "00_INBOX/photos_unsorted/Survey 1, 12.06.26",
+        "gpx_file": PROJECT_DIR / "00_INBOX/tracks/12_Jun_2026_07_20_38.gpx",
+    },
+    {
+        "name": "Survey 2",
+        "photos_dir": PROJECT_DIR / "00_INBOX/photos_unsorted/Survey 2, 13.06.26",
+        "gpx_file": PROJECT_DIR / "00_INBOX/tracks/13_Jun_2026_09_06_59.gpx",
+    },
+]
+
+OUTPUT_CSV = PROJECT_DIR / "03_DATA/geotagged_results.csv"
 
 GPX_NS = {"gpx": "http://www.topografix.com/GPX/1/1"}
 EXIF_TAG_DATETIME_ORIGINAL = 36867
@@ -49,26 +62,6 @@ def read_exif_datetime(photo_path):
         return None
 
 
-def build_observation_index(observations_dir):
-    """Return {filename: metadata.json path} for every observation folder."""
-    index = {}
-    for metadata_path in observations_dir.rglob("metadata.json"):
-        folder = metadata_path.parent
-        for f in folder.iterdir():
-            if f.suffix.lower() in (".jpg", ".jpeg"):
-                index[f.name] = metadata_path
-    return index
-
-
-def write_gps_to_metadata(metadata_path, lat, lon):
-    with open(metadata_path, "r", encoding="utf-8") as fh:
-        data = json.load(fh)
-    data["gps_lat"] = round(lat, 7)
-    data["gps_lon"] = round(lon, 7)
-    with open(metadata_path, "w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=4)
-
-
 def find_closest_trackpoint(photo_dt, trackpoints):
     best_point = None
     best_diff = float("inf")
@@ -80,60 +73,74 @@ def find_closest_trackpoint(photo_dt, trackpoints):
     return best_point, best_diff
 
 
-def main():
-    trackpoints = parse_gpx_trackpoints(GPX_FILE)
+def process_survey(survey, rows):
+    name = survey["name"]
+    photos_dir = survey["photos_dir"]
+    gpx_file = survey["gpx_file"]
+
+    trackpoints = parse_gpx_trackpoints(gpx_file)
     if not trackpoints:
-        print("No track points found in GPX file.")
+        print(f"[{name}] No track points found in {gpx_file.name}")
         return
 
     track_start = trackpoints[0][0]
     track_end = trackpoints[-1][0]
-    print(f"GPX track: {track_start:%Y-%m-%d %H:%M:%S} UTC -> {track_end:%Y-%m-%d %H:%M:%S} UTC")
-    print(f"Track points loaded: {len(trackpoints)}")
+    print(f"[{name}] GPX: {track_start:%Y-%m-%d %H:%M:%S} UTC -> {track_end:%Y-%m-%d %H:%M:%S} UTC  ({len(trackpoints)} points)")
+
+    photos = sorted(p for p in photos_dir.iterdir() if p.suffix.lower() in (".jpg", ".jpeg"))
+    print(f"[{name}] Photos found: {len(photos)}")
     print()
 
-    obs_index = build_observation_index(OBSERVATIONS_DIR)
-
-    photos = sorted(
-        p for p in PHOTOS_DIR.iterdir() if p.suffix.lower() in (".jpg", ".jpeg")
-    )
-    print(f"Photos found: {len(photos)}")
-    print()
-
-    header = f"{'Filename':<30} {'Lat':>12} {'Lon':>12} {'Diff (s)':>10}"
+    header = f"  {'Filename':<25} {'Lat':>12} {'Lon':>12} {'Diff (s)':>10}"
     print(header)
-    print("-" * len(header))
+    print("  " + "-" * (len(header) - 2))
 
-    matched = 0
-    skipped = 0
-
+    matched = skipped = 0
     for photo_path in photos:
         photo_dt = read_exif_datetime(photo_path)
 
         if photo_dt is None:
-            print(f"{photo_path.name:<30} SKIPPED -- no EXIF DateTimeOriginal")
+            print(f"  {photo_path.name:<25} SKIPPED -- no EXIF DateTimeOriginal")
             skipped += 1
             continue
 
         closest, diff_s = find_closest_trackpoint(photo_dt, trackpoints)
 
         if diff_s > MAX_TIME_DIFF_S:
-            print(f"{photo_path.name:<30} SKIPPED -- {diff_s:.0f}s outside 2-hour track range")
+            print(f"  {photo_path.name:<25} SKIPPED -- {diff_s:.0f}s outside 2-hour range")
             skipped += 1
             continue
 
-        _, lat, lon = closest
-        metadata_path = obs_index.get(photo_path.name)
-        if metadata_path:
-            write_gps_to_metadata(metadata_path, lat, lon)
-            written = f"  -> wrote {metadata_path.relative_to(PROJECT_DIR)}"
-        else:
-            written = "  -> no observation folder found"
-        print(f"{photo_path.name:<30} {lat:>12.7f} {lon:>12.7f} {diff_s:>10.1f}{written}")
+        gpx_dt, lat, lon = closest
+        print(f"  {photo_path.name:<25} {lat:>12.7f} {lon:>12.7f} {diff_s:>10.1f}")
+        rows.append({
+            "filename": photo_path.name,
+            "survey": name,
+            "lat": round(lat, 7),
+            "lon": round(lon, 7),
+            "diff_seconds": round(diff_s, 1),
+            "photo_time": photo_dt.strftime("%Y-%m-%d %H:%M:%S"),
+            "gpx_time": gpx_dt.strftime("%Y-%m-%d %H:%M:%S"),
+        })
         matched += 1
 
     print()
-    print(f"Matched: {matched}  |  Skipped: {skipped}")
+    print(f"  [{name}] Matched: {matched}  |  Skipped: {skipped}")
+    print()
+
+
+def main():
+    rows = []
+    for survey in SURVEYS:
+        process_survey(survey, rows)
+
+    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=["filename", "survey", "lat", "lon", "diff_seconds", "photo_time", "gpx_time"])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"Results saved to {OUTPUT_CSV.relative_to(PROJECT_DIR)}  ({len(rows)} rows)")
 
 
 if __name__ == "__main__":
